@@ -1,0 +1,18 @@
+# Ignore all .env files that contain sensitive information
+.env
+.env.local
+.env.*.local
+
+# Ignore specific environment files (development & production)
+.env.development
+.env.production
+.env.development.local
+.env.production.local
+
+# Allow only `.env.example` to be committed
+!.env.example
+
+# developers folder
+developement_secrets
+
+node_modules
