@@ -39,7 +39,7 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import User from "./models/user.model.js";
 
-import { deliverPendingMessages } from "./controllers/chat.controller.js";
+import { deliverPendingMessages, markMessagesAsRead } from "./controllers/chat.controller.js";
 // import UserSession from "./models/userSession.model.js";
 
 const port = process.env.PORT || 4000;
@@ -135,6 +135,10 @@ const startServer = async () => {
                 // 🔥 Deliver pending messages right after connecting
                 await deliverPendingMessages(io, userID);
             });
+
+            socket.on("mark-as-read", (chatID) => {
+                markMessagesAsRead(io, chatID, socket.userID);
+              });
 
             socket.on("getUserStatus", async ({ userID }) => {
                 const online = global.chatOnlineUsers.has(userID);

@@ -29,31 +29,11 @@ const contactSchema = new Schema({
     timestamps:true
 });
 
-// ✅ Case-Insensitive Unique Index on `userID` & `fullname`
+// ✅ Case-Insensitive Unique Index on `userID` & `contactName`
 contactSchema.index(
-    { userID: 1, fullname: 1 },
+    { userID: 1, contactName: 1 },
     { unique: true, collation: { locale: "en", strength: 2 } }
 );
-
-// contactSchema.statics.isContactSaved = async function(userID, savedUserID, contactName){
-
-//     const isSaved = await this.findOne({$and:[{userID}, {savedUserID}]});
-
-//     if (isSaved) {
-        
-//         throw new ApiError(400, "User Already in Contacts !");
-//     }
-
-//     const isNameTaken = await this.findOne({$and:[{userID}, {contactName}]});
-
-//     if (isNameTaken) {
-        
-//         throw new ApiError(400, "Name is not available !");
-//     }
-
-//     return false;
-// };
-
 contactSchema.statics.isUserSaved = async function(userID, savedUserID){
 
     const contact = await this.findOne({$and:[{userID}, {savedUserID}]});
@@ -66,14 +46,23 @@ contactSchema.statics.isContactNameAvailable = async function(userID, contactNam
     return contact;
 };
 
-contactSchema.statics.saveContact = async function(userID, savedUserID, contactName){
+// contactSchema.statics.saveContact = async function(userID, savedUserID, contactName){
+contactSchema.statics.saveContact = async function(userID, savedUser, contactName){
 
-    const contact = await this.create({userID, savedUserID, contactName});
+    // const contact = await this.create({userID, savedUserID, contactName});
+    const contact = await this.create({userID, savedUserID:savedUser._id, contactName});
 
-    return contact;
+    const contactObj = contact.toObject();
+    const { contactName:cName, _id, ...rest } = contactObj;
+    // contactObj.savedUser = savedUser.email;
+    // contactObj.savedUser = savedUser._id;
+    // delete contactObj.
+    const returnObj = {contactName:cName, _id, contactID:_id, savedUser:{email:savedUser.email, userID:savedUser._id}}
+    console.log("returnObj :", returnObj);
+    return returnObj;
 };
 
-contactSchema.methods.editContact = async function(contactId, userID, savedUserID, contactName){
+contactSchema.methods.editContact = async function(/*contactId, */userID, savedUserID, contactName){
 
     if (this.userID.toString() !== userID.toString()) {
         throw new ApiError(403, "Unauthorized: You cannot update this note");
@@ -89,6 +78,7 @@ contactSchema.methods.editContact = async function(contactId, userID, savedUserI
     existingNote.contactName = contactName;
 
     await existingNote.save();
+    console.log('existingNote :', existingNote);
 
     return existingNote;
 };
@@ -107,6 +97,21 @@ contactSchema.statics.isValidContact = async function(id, userID){
     
 };
 
+contactSchema.statics.deleteContact = async function(id, userID){
+    const contact = await this.findById(id);
+
+    if (!contact) {
+        throw new ApiError(404, "Contact not found");
+    }
+
+    if (!contact.userID.equals(userID)) {
+        throw new ApiError(400, "Contact is not of this user");
+    }
+
+    const deletedContact = await this.findByIdAndDelete(id);
+    console.log("deletedContact:", deletedContact);
+    return deletedContact;
+}
 const Contact = mongoose.model('Contact', contactSchema);
 
 export default Contact;

@@ -46,25 +46,21 @@ const MessageForm = ({ fieldsArray, data={}, page="message" }) => {
 
 	// const [ redirect, setRedirect ] = useState(false);
 
-	const formSubmit = async (data, e) => {
-
-		console.log('form data :', data);
-
-		try {	
-				const messageAction = await dispatch(sendMessage(data));
-
-				// ✅ If user exists, fetch chats & contacts
-				if (messageAction?.error) {
-
-					alert(messageAction.payload);
-				}
-				reset();
+	const formSubmit = async (formData) => {
+		try {
+		  // console.log("🚀 Submitted form data:", formData); // 👈 Add this
+	  
+		  const messageAction = await dispatch(sendMessage(formData));
+		  if (messageAction?.error) {
+			alert(messageAction.payload);
+		  }
+	  
+		  reset();
 		} catch (error) {
-			
-			console.log('Error :', error);
-			// alert(error?.response?.data?.message)
+		  console.error("Error sending message:", error);
 		}
-	};
+	  };
+	  
 
 	const formErrors = (errors, e) => {
 		console.error("errors :", errors);

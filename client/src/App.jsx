@@ -1,65 +1,32 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import './App.css';
-import Layout from './Layout';
-import UserRegister from './pages/User/Register/UserRegister.jsx';
-import UserLogin from './pages/User/UserLogin.jsx';
-import UserEmail from './pages/User/Register/UserEmail.jsx';
-import Dashboard from './pages/User/Dashboard.jsx';
-import ProtectedRoutes from './components/ProtectedRoutes/ProtectedRoutes.jsx';
-import { useSelector } from 'react-redux';
+// src/App.jsx
 import { useEffect } from 'react';
-import VerifyOtp from './pages/OTP/VerifyOtp.jsx';
+import { useDispatch, useSelector } from 'react-redux';
+import { initializeUser } from './redux/slices/authSlice.js';
+import { fetchAllChats } from './redux/slices/chatSlice.js';
+import { fetchAllMessages } from './redux/slices/messageSlice.js';
+import { fetchAllContacts } from './redux/slices/contactSlice.js';
 
 const App = () => {
+  const dispatch = useDispatch();
+  const { isLoggedIn, accessToken } = useSelector((state) => state.auth || {});
 
-	const router = createBrowserRouter([{
+  useEffect(() => {
+    // Step 1: Always try to initialize the user on app load
+	// console.log("app");
+    dispatch(initializeUser());
+  }, [dispatch]);
 
-		path: "/",
-		element: <Layout />,
-		children: [
-			{
-				path: "user/register",
-				element: <UserEmail />
-			},
-			{
-				path: "user/verify-otp",
-				element: <VerifyOtp />
-			},
-			{
-				path: "user/create-account",
-				element: <UserRegister />
-			},
-			{
-				path: "user/login",
-				element: <UserLogin />
-			},
-			{
-				path: "users/:email/dashboard",
-				element: <ProtectedRoutes> <Dashboard /> </ProtectedRoutes>
-			}
-		]
-	}], { basename: "/chat-app" });
+  useEffect(() => {
+    // Step 2: Once logged in, fetch all needed data
+    if (isLoggedIn && accessToken) {
+      dispatch(fetchAllChats());
+      dispatch(fetchAllMessages());
+      dispatch(fetchAllContacts());
+    }
+  }, [isLoggedIn, accessToken, dispatch]);
 
-	// const notes = useSelector(state=>state?.notes);
+  // No JSX because routing is handled via <RouterProvider />
+  return null;
+};
 
-	const auth = useSelector(state=>state.auth);
-	const contacts = useSelector(state=>state.contacts);
-	const chats = useSelector(state=>state.chats);
-	const messages = useSelector(state => state.messages);
-
-	useEffect(()=>{
-
-		console.log("auth :", auth);
-		console.log("contacts :", contacts);
-		console.log("chats :", chats);
-		console.log("messages :", messages);
-	}, [auth, contacts, chats, messages.byChatId]);
-
-	return (
-		<>
-			<RouterProvider router={router} />
-		</>
-	);
-}
-
-export default App
+export default App;

@@ -5,13 +5,14 @@ import { Button } from "react-bootstrap";
 
 const VerifyOtp = () => {
     const navigate = useNavigate();
-    const location = useLocation();
-    const locationState = location?.state;
+    // const location = useLocation();
+    const { state } = useLocation();
+    const { email } = state || {};
     return (
         <>
             <div  className="input-form-container">
                 <h1> Verify OTP </h1>
-                <UserForm fieldsArray={fields} operation={'verify-otp'} data={locationState} page={'verify-otp'} />
+                <UserForm fieldsArray={fields} operation={'verify-otp'} data={{email}} page={'verify-otp'} />
                 <Button className="my-btn btn-back" onClick={() => navigate(-1)}> Back </Button>
             </div>
         </>

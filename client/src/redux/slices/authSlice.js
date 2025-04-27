@@ -6,9 +6,9 @@ export const initializeUser = createAsyncThunk(
     "user/initializeUser",
     async (_, { rejectWithValue }) => {
         try {
-            console.log('InitilazeUser');
+            // console.log('InitilazeUser');
             const { data } = await client.get("/auth/verify-login");
-            console.log('data :', data);
+            // console.log('data :', data);
             return data.data; // Returns the authenticated user object
         } catch (error) {
             return rejectWithValue(error.response.data.message || "Authentication failed");
@@ -35,10 +35,10 @@ export const loginUser = createAsyncThunk(
     async (credentials, { rejectWithValue }) => {
         try {
             const { data } = await client.post("/auth/login", credentials);
-            // console.log('data :', data);
+            // // console.log('data :', data);
             return data.data; // Returns user data after login
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             return rejectWithValue(error.response.data.message || "Login failed");
         }
     }
@@ -130,7 +130,7 @@ const authSlice = createSlice({
             })
             .addMatcher((action) => action.type.startsWith("user/") && action.type.endsWith("/rejected"), (state, action) => {
                 state.loading = false;
-                // console.log(action.payload);
+                // // console.log(action.payload);
                 state.error = action.payload;
             });
     }

@@ -113,6 +113,7 @@ userSchema.methods.generate_access_and_refresh_token = async function() {
 };
 
 userSchema.methods.loginUser = async function () {
+    console.log("methods loginUser");
     const user = this.toObject(); // Convert Mongoose document to plain object
 
     // Remove sensitive fields
@@ -121,20 +122,6 @@ userSchema.methods.loginUser = async function () {
 
     return user;
 };
-
-// userSchema.methods.addNote = async function (noteID) {
-
-//     this.notes.push(noteID);
-//     await this.save({validateBeforeSave: false});
-//     // return true;
-// }
-
-// userSchema.methods.removeNote = async function (noteID) {
-
-//     this.notes = this.notes.filter(note=>note.toString() !== noteID.toString());
-//     await this.save({validateBeforeSave: false});
-//     // return true;
-// }
 
 userSchema.statics.isUserOnApp = async function(email){
 

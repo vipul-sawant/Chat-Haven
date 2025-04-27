@@ -5,9 +5,9 @@ export const fetchAllChats = createAsyncThunk(
     "chat/fetchAllChats",
     async (_, { rejectWithValue }) => {
         try {
-            console.log('fetchAllChats');
+            // console.log('fetchAllChats');
             const { data } = await client.get("/chats");
-            console.log('fetchAllChats data :', data);
+            // console.log('fetchAllChats data :', data);
             return data.data; // Returns the authenticated user object
         } catch (error) {
             return rejectWithValue(error.response.data.message || "Authentication failed");
@@ -44,6 +44,7 @@ const chatSlice = createSlice({
         
             payload.forEach(({ chatId, message }) => {
                 const chat = state.entities[chatId];
+                console.log(chat);
                 if (chat && state.selectedChatID !== chatId) {
                     const count = Array.isArray(message) ? message.length : 1;
                     chat.unreadCount = (chat.unreadCount || 0) + count;
@@ -60,8 +61,8 @@ const chatSlice = createSlice({
                         ? message[message.length - 1]
                         : message;
         
-                    chat.updatedAt = lastMsg.createdAt;
-                    chat.text = lastMsg.text;
+                    chat.updatedAt = lastMsg.updatedAt;
+                    chat.lastMessage = lastMsg;
                 }
             });
         },
@@ -85,7 +86,7 @@ const chatSlice = createSlice({
         })
         .addMatcher((action) => action.type.startsWith("chat/") && action.type.endsWith("/rejected"), (state, action) => {
             state.loading = false;
-            // console.log(action.payload);
+            // // console.log(action.payload);
             state.error = action.payload;
         });
     }

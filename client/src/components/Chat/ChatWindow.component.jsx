@@ -1,74 +1,118 @@
-// import { useLocation as location } from "react-router-dom";
-import ChatHeader from "./ChatHeader.component.jsx";
-// import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import Message from "../Message/Message.component.jsx";
-// import { messageSelectors } from "../../redux/slices/messageSlice.js";
-// import { chatSelectors } from "../../redux/slices/chatSlice.js";
-// import messagesAdapter from "../../redux/slices/messageSlice.js";
-import { selectMessagesByChatId } from "../../redux/slices/messageSlice.js";
-import { useEffect, useState } from "react";
-import { chatSelectors } from "../../redux/slices/chatSlice.js";
-import MessageForm from "../Message/MessageForm.component.jsx";
-import { fields } from "../../utils/form/fields/message/sendMessage.js";
-import { contactSelectors } from "../../redux/slices/contactSlice.js";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useRef } from "react";
+import { format, isToday, isYesterday, differenceInCalendarDays } from "date-fns";
+
+import ChatHeader from "./ChatHeader.component";
+import Message from "../Message/Message.component";
+import MessageForm from "../Message/MessageForm.component";
+import { fields } from "../../utils/form/fields/message/sendMessage";
+import { selectMessagesByChatId, markMessagesAsRead } from "../../redux/slices/messageSlice";
+import { chatSelectors } from "../../redux/slices/chatSlice";
+import { contactSelectors } from "../../redux/slices/contactSlice";
+import socket from "../../utils/socket/socket";
+
+// Helper to format date title
+const getDateTitle = (dateString) => {
+  const date = new Date(dateString);
+
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+
+  const diffInDays = differenceInCalendarDays(new Date(), date);
+  if (diffInDays < 7) return format(date, "EEEE"); // e.g., Monday
+
+  return format(date, "dd MMM yyyy"); // e.g., 27 Apr 2025
+};
+
+// Helper to group messages by formatted date
+const groupMessagesByDate = (messages) => {
+  return messages.reduce((groups, message) => {
+    const dateKey = getDateTitle(message.updatedAt);
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(message);
+    return groups;
+  }, {});
+};
 
 const ChatWindow = () => {
-	
-	// Correctly select the selected chat id from the chats slice
-	const selectedChatID = useSelector((state) => state.chats.selectedChatID);
-	console.log("selectedChatID :", selectedChatID);
-	// Use selectors directly at the top level of your component
-	const chat = useSelector((state) =>
-		selectedChatID ? chatSelectors.selectById(state, selectedChatID) : null
-	);
-	console.log("chats :", chat);
-	const messages = useSelector((state) =>
-		selectedChatID ? selectMessagesByChatId(state, selectedChatID) : []
-	);
+  const dispatch = useDispatch();
+  const { user } = useSelector(state => state.auth || {});
+  const selectedChatID = useSelector(state => state.chats.selectedChatID);
+  const chat = useSelector(state => selectedChatID ? chatSelectors.selectById(state, selectedChatID) : null);
+  const messages = useSelector(state => selectedChatID ? selectMessagesByChatId(state, selectedChatID) : []);
+  const contacts = useSelector(contactSelectors.selectAll);
 
-	const contacts = useSelector(contactSelectors.selectAll);
-	const iscontact = (userID) => {
+  const isContact = (userID) => contacts.find((c) => c.savedUser.userID === userID);
 
-		return contacts.find(c => c.savedUser.userID === userID);
-	};
-	// const getDisplayNameForUser = (userID, email) => {
-	// 	const contact = contacts.find((c) => c.savedUser.userID === userID);
-	// 	return contact ? contact.contactName : email;
-	//   };
-	  
-	// const messages = useSelector((state) => selectMessagesByChatId(state, selectedChatID));
-	return (
-		<>
-			<div className="d-flex flex-column h-100">
-				{ chat?._id ? (
-					<>
-						<ChatHeader user={chat.participant} />
-						<div className="flex-grow-1 p-3 overflow-auto bg-light">
-							{messages.length > 0 ? (
-								messages.map(msg => (
-									<Message key={msg._id} msg={msg} viewType={"chat"} />
-								))
-							) : (
-								<div className="text-center text-muted mt-5">No messages yet. Start chatting!</div>
-								)}
-						</div>
-						<MessageForm fieldsArray={fields} data={{
-							...(chat?._id && { chatID: chat._id }),
-							...(iscontact(chat.participant.userID) && { contactID: iscontact(chat.participant.userID)._id }),
-						}} />
-					</>
-				):(
-					<div className="flex-grow-1 d-flex justify-content-center align-items-center bg-light">
-						<div className="text-center text-muted">
-							<h5>👋 Welcome!</h5>
-							<p>Select a chat from the list to start messaging.</p>
-						</div>
-					</div>
-				) }
-			</div>
-		</>
-	);
+  const markChatAsRead = (chatId) => {
+    if (socket && chatId) {
+      socket.emit("mark-as-read", chatId);
+    }
+  };
+
+  // Ref for chat container to scroll to bottom
+  const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (chat?._id && chat?.lastMessage?._id && chat.lastMessage.recipientID === user._id) {
+      markChatAsRead(chat._id);
+    }
+  }, [chat?._id, chat?.lastMessage?._id, chat?.lastMessage?.status]);
+
+  useEffect(() => {
+    // Scroll to the bottom of the chat container when messages change
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const groupedMessages = groupMessagesByDate(messages);
+
+  return (
+    <div className="chat-window d-flex flex-column h-100">
+      {chat?._id ? (
+        <>
+          <ChatHeader user={chat.participant} />
+
+          <div ref={chatContainerRef} className="flex-grow-1 px-3 py-2 overflow-auto bg-light" style={{ height: "0px" }}>
+            {messages.length > 0 ? (
+              Object.keys(groupedMessages).map((dateKey) => (
+                <div key={dateKey} className="mb-3">
+                  <div className="text-center text-muted my-2" style={{ fontSize: "0.9rem" }}>
+                    {dateKey}
+                  </div>
+                  {groupedMessages[dateKey].map((msg) => (
+                    <Message key={msg._id} msg={msg} viewType="chat" />
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted mt-5">
+                No messages yet. Start chatting!
+              </div>
+            )}
+          </div>
+
+          <MessageForm
+            fieldsArray={fields}
+            data={{
+              ...(chat?._id && { chatID: chat._id }),
+              ...(isContact(chat.participant.userID) && {
+                contactID: isContact(chat.participant.userID)._id,
+              }),
+            }}
+          />
+        </>
+      ) : (
+        <div className="flex-grow-1 d-flex justify-content-center align-items-center bg-light">
+          <div className="text-center text-muted">
+            <h5>👋 Welcome!</h5>
+            <p>Select a chat from the list to start messaging.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default ChatWindow;

@@ -5,13 +5,13 @@ import { Button } from "react-bootstrap";
 
 const UserRegister = () => {
     const navigate = useNavigate();
-    const location = useLocation();
-    const locationState = location?.state;
+    const { state } = useLocation();
+    const { email } = state || {};
     return (
         <>
             <div  className="input-form-container">
                 <h1> User Register</h1>
-                <UserForm fieldsArray={fields} operation={'create-account'} data={locationState} page={'create-account'} />
+                <UserForm fieldsArray={fields} operation='create-account' data={{email}} page='create-account' />
                 <Button className="my-btn btn-back" onClick={() => navigate('/user/login')}> Login </Button>
             </div>
         </>

@@ -30,6 +30,7 @@ const addNewContact = asyncHandler( async (req, res) => {
         const email = body.email;
         const contactName = body.contactName;
 
+        console.log("add contact body :", body);
         const userID = checkID(user._id, "User ID");
         
         const isUserOnApp = await User.isUserOnApp(email);
@@ -62,7 +63,8 @@ const addNewContact = asyncHandler( async (req, res) => {
             throw new ApiError(400, "User with same contactName is already in your contacts");
         }
 
-        const savedContact = await Contact.saveContact(userID, contactToSaveUserID, contactName);
+        // const savedContact = await Contact.saveContact(userID, contactToSaveUserID, contactName);
+        const savedContact = await Contact.saveContact(userID, isUserOnApp, contactName);
 
         await user.saveContact(savedContact._id);
 
@@ -148,4 +150,124 @@ const fetchAllContacts = asyncHandler(async (req, res) => {
 
 } );
 
-export { addNewContact, fetchAllContacts };
+const editContact = asyncHandler( async (req, res) => {
+
+    const { params = {}, body = {}, user } = req;
+
+    const requiredFields = ['email', 'contactName'];
+    const missingFields = checkRequiredFields(requiredFields, body);
+
+    console.log("missingFields :", missingFields);
+
+    try {
+        console.log("editContact");
+        console.log("body :", body);
+        console.log("params :", params);
+        const userID = user._id;
+        const contactID = checkID(params.contactID, "ContactID to edit");
+
+        if (missingFields.length > 0) {
+            
+            throw new ApiError(400, "Enter all details");
+        }
+
+        const email = body.email;
+        const contactName = body.contactName;
+        const isUserOnApp = await User.isUserOnApp(email);
+
+        if (!isUserOnApp) {
+            
+            throw new ApiError(400, "This email is not of a App User!!");
+        }
+
+        // const contactToSaveUserID = checkID(isUserOnApp._id, "Contact to save User ID");
+
+        // if (userID.equals(contactToSaveUserID)) {
+            
+        //     throw new ApiError(400, "Cannot Add Yourself as your contact");
+        // }
+
+        const isValidContact = await Contact.isValidContact(contactID, userID);
+
+        if (!isValidContact) {
+            
+            throw new ApiError(400, "Contact does'nt exist");
+        }
+        // const isUserSaved = await Contact.isUserSaved(userID, contactToSaveUserID);
+
+        // if (!isUserSaved) {
+            
+        //     throw new ApiError(400, "User not in your contacts");
+        // }
+
+        const isContactNameAvailable = await Contact.isContactNameAvailable(userID, contactName);
+
+        // console.log(isContactNameAvailable);
+
+        if (isContactNameAvailable) {
+            
+            throw new ApiError(400, "User with same contactName is already in your contacts");
+        }
+
+        const editedContact = await isValidContact.editContact(userID, contactID, contactName);
+        console.log("editedContact :", editedContact);
+        return res.status(200).json(
+            new ApiResponse(201, editedContact, `Contact edited successfully with name ${contactName}`)
+        );
+    } catch (error) {
+        
+        console.log("error :", error);
+
+        if (error instanceof ApiError) {
+            const { statusCode=400, message="" } = error;
+            return res.status(statusCode).json(
+                new ApiResponse(statusCode, {}, message)
+            )
+        }
+
+        return res.status(500).json(
+            new ApiResponse(500, {}, error.message || "Something went wrong")
+        )
+        
+    }
+} );
+
+const deleteContact = asyncHandler( async (req, res) => {
+
+    const { params = {}, user } = req;
+
+    try {
+        
+        const userID = user._id;
+        const contactID = checkID(params.contactID, "Contact ID to delete");
+
+        const isContactValid = await Contact.isValidContact(contactID, userID);
+
+        if (!isContactValid) {
+            
+            throw new ApiError(400, "Contact does'nt exist");
+        }
+
+        const deletedContact = await Contact.deleteContact(contactID, userID);
+
+        return res.status(200).json(
+            new ApiResponse(201, deletedContact, `Contact deleted successfully`)
+        );} catch (error) {
+        
+        console.log("error :", error);
+
+        if (error instanceof ApiError) {
+            const { statusCode=400, message="" } = error;
+            return res.status(statusCode).json(
+                new ApiResponse(statusCode, {}, message)
+            )
+        }
+
+        return res.status(500).json(
+            new ApiResponse(500, {}, error.message || "Something went wrong")
+        )
+        
+    }
+} );
+
+export { addNewContact, fetchAllContacts, editContact, deleteContact };

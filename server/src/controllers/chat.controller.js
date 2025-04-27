@@ -114,16 +114,20 @@ const sendMessage = asyncHandler( async (req, res) => {
             chat.lastMessage = newMessage._id;
             await chat.save({validateBeforeSave:false});
         }
+        const userSocketID = global.chatOnlineUsers.get(user._id.toString());
+        console.log("userSocketID :",userSocketID);
+        io.to(userSocketID).emit("single-message-sent", newMessage);
         
             // Notify recipient of new message
             // Check if recipient is online
         const recipientSocketID = global.chatOnlineUsers.get(recipientID.toString());
-
+        console.log(user._id);
     if (recipientSocketID) {
-        io.to(recipientSocketID).emit("singleMessageDelivered", newMessage);
+        console.log('singleMessageelivered from', user.email);
 
         // Call the separate function to mark as delivered if recipient is online
-        await markMessageDelivered(io,recipientID, newMessage);
+        await markMessageDelivered(io,recipientID, newMessage, []);
+        // io.to(recipientSocketID).emit("single-message-recieved", newMessage);
     }
         return res.status(200).json(
             new ApiResponse(201, newMessage, `New message sent`)
@@ -146,30 +150,113 @@ const sendMessage = asyncHandler( async (req, res) => {
     }
 } );
 
-const markMessageDelivered = async(io, recipientID, message, deliveredMessagesForBulk) => {
-    if (!global.chatOnlineUsers.has(recipientID.toString())) return; // Only proceed if recipient is online
+// const markMessagesAsRead = async (io, chatID, readerID) => {
+//   if (!chatID || !readerID) return;
 
-    // Update message status to "delivered"
-    try {
-        message.status = "delivered";
-        await message.save({validateBeforeSave:false});
-        const chatID = message.chatID.toString();
+//   console.log("readerID :", readerID);
+//   try {
+//     // Find all messages that are delivered but not yet read
+//     const messagesToUpdate = await Message.find({
+//       chatID,
+//       recipientID: readerID,
+//       status: { $in: ["sent", "delivered"] },
+//     });
 
-        if (deliveredMessagesForBulk) {
-         // Bulk mode: accumulate for later emit
-         deliveredMessagesForBulk.push({ chatID, message });
-        } else {
-            // Single message delivery — emit directly
-            const socketID = global.chatOnlineUsers.get(recipientID.toString());
-            if (socketID) {
-              io.to(socketID).emit("singleMessageDelivered", { chatID, message });
-            }
-        }
-    } catch (error) {
-        
-        console.log("Message deliver Error", error);
+//     if (!messagesToUpdate.length) return;
+    
+//     // Group messages by authorID
+//     const groupedMessages = new Map();
+
+    
+//     for (let message of messagesToUpdate) {
+//       // Update status to "read"
+//       message.status = "read";
+//       await message.save({ validateBeforeSave: false });
+
+//       const authorID = message.authorID.toString();
+//       if (!groupedMessages.has(authorID)) {
+//         groupedMessages.set(authorID, []);
+//       }
+//       groupedMessages.get(authorID).push(message);
+//     }
+    
+//     // Emit grouped messages to each sender
+//     for (let [authorID, messages] of groupedMessages.entries()) {
+//       const senderSocketID = global.chatOnlineUsers.get(authorID);
+
+//       if (senderSocketID) {
+//         io.to(senderSocketID).emit("chat-marked-as-read", {
+//           chatID,
+//           messages,
+//           authorID
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.error("❌ Error marking messages as read:", error);
+//   }
+// };
+
+const markMessagesAsRead = async (io, chatID, readerID) => {
+  if (!chatID || !readerID) return;
+
+  console.log("readerID :", readerID);
+  try {
+    const messagesToUpdate = await Message.find({
+      chatID,
+      recipientID: readerID,
+      status: { $in: ["sent", "delivered"] },
+    });
+
+    if (!messagesToUpdate.length) return;
+
+    // Update all messages to 'read'
+    const updatedMessages = [];
+    for (const message of messagesToUpdate) {
+      message.status = "read";
+      await message.save({ validateBeforeSave: false });
+      updatedMessages.push(message);
     }
+
+    // Notify the sender (single author)
+    const senderID = updatedMessages[0].authorID.toString();
+    const senderSocketID = global.chatOnlineUsers.get(senderID);
+
+    console.log(senderSocketID);
+
+    if (senderSocketID) {
+      io.to(senderSocketID).emit("chat-marked-as-read", {
+        chatID,
+        messages: updatedMessages,
+        authorID: senderID,
+      });
+    }
+
+  } catch (error) {
+    console.error("❌ Error marking messages as read:", error);
+  }
 };
+
+
+const markMessageDelivered = async (io, recipientID, message, deliveredMessagesForBulk) => {
+  // Example logic
+  console.log('deliveredMessagesForBulk :', deliveredMessagesForBulk);
+  if (deliveredMessagesForBulk && !deliveredMessagesForBulk.includes(message._id)) {
+      deliveredMessagesForBulk.push(message._id);
+     
+  }
+  const recipientSocketID = global.chatOnlineUsers.get(recipientID.toString());
+  console.log('recipentSocketID :', recipientSocketID);
+  console.log('OnlineUsers :', global.chatOnlineUsers);
+if (recipientSocketID) {
+    console.log('singleMessageelivered to', recipientID);
+    message.status = "delivered";
+    await message.save({validateBeforeSave:false});
+    io.to(recipientSocketID).emit("single-message-recieved", message);
+    io.to(recipientSocketID).emit("single-message-delivered", message);
+  }
+};
+
 
 const deliverPendingMessages = async(io, recipientID) => {
 
@@ -195,26 +282,13 @@ const deliverPendingMessages = async(io, recipientID) => {
           messages,
       }));
             // for (const [chatID, count] of Object.entries(deliveredCountByChat)) {
-              io.to(recipientSocketID).emit("bulkMessagesDelivered", finalPayload);
+              console.log('bulk-messages-recieved to', recipientID);
+              io.to(recipientSocketID).emit("bulk-messages-recieved", finalPayload);
             // }
         }
     } catch (error) {
         
         console.log("Deliever Pending Messages Error", error);
-    }
-};
-
-const markChatAsRead = async(recipientID, chatID) => {
-
-    try {
-        const unreadMessages = await Message.find({ $and: [{recipientID}, {chatID}, {status: "delivered"}] });
-    
-        for (let message of unreadMessages) {
-             message.status = "sent";
-             await message.save({validateBeforeSave:false});
-        }
-    } catch (error) {
-        
     }
 };
 
@@ -376,4 +450,4 @@ const getAllMessages = asyncHandler( async (req, res) => {
   }
 } );
 
-export { sendMessage, markMessageDelivered, deliverPendingMessages, markChatAsRead, fetchAllChats, getAllMessages };
+export { sendMessage, deliverPendingMessages, fetchAllChats, getAllMessages, markMessagesAsRead };

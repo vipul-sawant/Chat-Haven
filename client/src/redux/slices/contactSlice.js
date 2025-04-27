@@ -46,7 +46,9 @@ export const editContact = createAsyncThunk(
   "contact/editContact",
   async ({ id, updates }, { rejectWithValue }) => {
     try {
-      const { data } = await client.put(`/contacts/${id}`, updates);
+      const { data } = await client.patch(`/contacts/${id}`, updates);
+      console.log("editContact");
+      console.log("data :", data);
       return data.data; // updated contact object
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Editing contact failed");
@@ -59,8 +61,9 @@ export const deleteContact = createAsyncThunk(
   "contact/deleteContact",
   async (id, { rejectWithValue }) => {
     try {
-      await client.delete(`/contacts/${id}`);
-      return id; // return just the deleted contact ID
+      const { data } = await client.delete(`/contacts/${id}`);
+      // return id; // return just the deleted contact ID
+      return data.data; 
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Deleting contact failed");
     }
@@ -95,7 +98,7 @@ const contactSlice = createSlice({
 
       // Delete
       .addCase(deleteContact.fulfilled, (state, action) => {
-        contactsAdapter.removeOne(state, action.payload);
+        contactsAdapter.removeOne(state, action.payload._id);
       })
 
       // Global loading/error matchers
@@ -132,6 +135,16 @@ const contactSlice = createSlice({
 export const contactSelectors = contactsAdapter.getSelectors(
   (state) => state.contacts
 );
+
+export const fetchContactById = (state, contactID) => {
+  // getSelectors() returns an object; we immediately call selectById on it:
+  const contact = contactsAdapter
+    .getSelectors((rootState) => rootState.contacts)
+    .selectById(state, contactID);
+
+  console.log("fetchContactById:", contact);
+  return contact;
+};
 
 // Export actions and reducer
 export const { removeAllContacts } = contactSlice.actions;

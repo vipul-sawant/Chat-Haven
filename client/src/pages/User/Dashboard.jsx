@@ -1,81 +1,76 @@
-import { useDispatch, useSelector } from "react-redux";
-import { logoutUser } from "../../redux/slices/authSlice.js";
-
-import "./Dashboard.css";
+// src/pages/User/Dashboard.jsx
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
-import socket from "../../utils/socket/socket.js";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams, Link } from "react-router-dom";
+
+// import { logoutUser } from "../../redux/slices/authSlice";
+import socket from "../../utils/socket/socket";
+import setupMessageListeners from "../../utils/socket/messageStatus";
+
+import ChatWindow from "../../components/Chat/ChatWindow.component";
+import ChatList from "../../components/Chat/ChatList.component";
 
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import Button from "react-bootstrap/Button";
 
-import ChatWindow from "../../components/Chat/ChatWindow.component.jsx";
-import ChatList from "../../components/Chat/ChatList.component.jsx";
-import setupMessageListeners from "../../utils/socket/messageStatus.js";
+import "./Dashboard.css";
 
 const Dashboard = () => {
-    
-    const dispatch = useDispatch();
-    const { error:authError, isLoggedIn=false } = useSelector(state=>state?.auth || {});
-    const handleLogout = async () => {
+  const dispatch = useDispatch();
+  const { error: authError, isLoggedIn = false } = useSelector((state) => state.auth || {});
+  // const { email = "unknown" } = useParams();
 
-        const userAction = await dispatch(logoutUser());
+  // const handleLogout = async () => {
+  //   const userAction = await dispatch(logoutUser());
+  //   if (!userAction?.error) {
+  //     alert("Logged out");
+  //   }
+  // };
 
-        const errors = Object.keys(userAction?.error || {});
+  useEffect(() => {
+    if (authError) {
+      console.error("Auth Error:", authError);
+    }
+  }, [authError]);
 
-        if (errors?.length === 0) {
-            
-            alert("logged out");
-        }
-    };
+  useEffect(() => {
+    if (!isLoggedIn) {
+      socket.disconnect();
+    }
+  }, [isLoggedIn]);
 
-    useEffect(()=>{
+  useEffect(() => {
+    if (socket.active) {
+      setupMessageListeners(socket, dispatch);
+    }
+  }, [socket]);
 
-        console.log("auth Error :", authError);
-    }, [authError]);
+  return (
+    <>
+      {/* 🔷 TOP BAR */}
+      {/* <div className="dashboard-topbar d-flex justify-content-between align-items-center p-2 px-3 border-bottom shadow-sm">
+        <span className="fw-semibold">👤 Logged in as: {email}</span>
+        <Link to={'/contacts'} style={{textDecoration:"none"}}> Contact List </Link>
+        <Button variant="outline-danger" size="sm" onClick={handleLogout}>
+          Logout
+        </Button>
+      </div> */}
 
-    useEffect(()=>{
-        if (!isLoggedIn) {
-        
-            socket.disconnect();    
-        }
-    }, [isLoggedIn]);
-
-    const { email="nothing" } = useParams();
-
-    useEffect(()=>{
-
-        if (socket.connected) {
-            
-            // dispatch(setupMessageListeners(socket, dispatch));
-            setupMessageListeners(socket, dispatch);
-        }
-    }, [socket.connected]);
-
-    return (
-        <>
-            <div className="dashboard-container">
-                {/* <NotesList /> */}
-                <h1>Dashboard</h1>
-                <br></br>
-                <p>{email}</p>
-                <br></br>
-                <button className="btn btn-danger" onClick={()=>{handleLogout()}}>Logout</button>
-            </div>
-
-            <Container fluid>
-      <Row className="vh-100">
-        <Col xs={12} md={4} className="border-end p-0">
-          <ChatList />
-        </Col>
-        <Col xs={12} md={8} className="p-0">
-          <ChatWindow />
-        </Col>
-      </Row>
-    </Container>
-        </>
-    );
+      {/* 🔷 CHAT LAYOUT */}
+      <Container fluid>
+        <Row className="vh-100">
+          <Col xs={12} md={4} className="border-end p-0">
+            <ChatList />
+          </Col>
+          <Col xs={12} md={8} className="p-0">
+            <ChatWindow />
+          </Col>
+        </Row>
+      </Container>
+    </>
+  );
 };
 
-export default Dashboard
+export default Dashboard;
