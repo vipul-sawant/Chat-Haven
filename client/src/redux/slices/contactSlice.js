@@ -47,8 +47,8 @@ export const editContact = createAsyncThunk(
   async ({ id, updates }, { rejectWithValue }) => {
     try {
       const { data } = await client.patch(`/contacts/${id}`, updates);
-      console.log("editContact");
-      console.log("data :", data);
+      // console.log("editContact");
+      // console.log("data :", data);
       return data.data; // updated contact object
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Editing contact failed");
@@ -142,7 +142,7 @@ export const fetchContactById = (state, contactID) => {
     .getSelectors((rootState) => rootState.contacts)
     .selectById(state, contactID);
 
-  console.log("fetchContactById:", contact);
+  // console.log("fetchContactById:", contact);
   return contact;
 };
 

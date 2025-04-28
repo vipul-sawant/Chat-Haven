@@ -27,7 +27,7 @@ const EditContact = () => {
             setContactData({contactName: contact.contactName, email: contact.savedUser.email, _id:contact._id});
         }
 
-        console.log("contactData :", contactData);
+        // console.log("contactData :", contactData);
     }, [id,contact]);
 
     if (!contactData) {

@@ -12,7 +12,7 @@ export const fields = [
         .required()
     },
     {
-        name: "chatID",
+        name: "chatKey",
         display: false,
         default: "",
         type: "text",
@@ -20,6 +20,15 @@ export const fields = [
         placeholder:"",
         validation: Yup.string()
     },
+    // {
+    //     name: "chatID",
+    //     display: false,
+    //     default: "",
+    //     type: "text",
+    //     label: "",
+    //     placeholder:"",
+    //     validation: Yup.string()
+    // },
     {
         name: "contactID",
         display: false,

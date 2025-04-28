@@ -21,7 +21,7 @@ const Layout = () => {
         let cleanup;
         if (isLoggedIn) {
             
-            console.log('isLoggedIn :', isLoggedIn);
+            // console.log('isLoggedIn :', isLoggedIn);
             cleanup = connectSocket(accessToken);
             socket.emit('joinChat', { userID: user._id });
             navigate(`/users/${user.email}/dashboard`, replace);
@@ -36,9 +36,9 @@ const Layout = () => {
 
     useEffect(()=>{
 
-        // console.log("chats :", chats);
-        // console.log("messages :", messages);
-        // console.log("contacts :", contacts);
+        // // console.log("chats :", chats);
+        // // console.log("messages :", messages);
+        // // console.log("contacts :", contacts);
     }, [chats, messages, contacts]);
 
     return (

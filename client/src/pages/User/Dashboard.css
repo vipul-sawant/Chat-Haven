@@ -41,10 +41,10 @@
     height: 100%;
   }
   
-  .list-group-item.active {
+  /* .list-group-item.active {
     background-color: #e6f0ff;
     border-left: 4px solid #0d6efd;
-  }
+  } */
   
   .chat-header {
     position: sticky;
@@ -60,10 +60,10 @@
     height: 100%;
   }
   
-  .list-group-item.active {
+  /* .list-group-item.active {
     background-color: #e6f0ff;
     border-left: 4px solid #0d6efd;
-  }
+  } */
   
 
 /* Mobile-Friendly Adjustments */

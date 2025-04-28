@@ -17,20 +17,31 @@ const NavbarComponent = () => {
 
   return (
     
-<Navbar bg="light" expand="lg" className="shadow-sm border-bottom">
-  <Container fluid className="px-3">
-  <Navbar.Brand as={Link}  to="/dashboard" className="fw-semibold">
-  Chat Haven
-</Navbar.Brand>
+<Navbar bg="light" expand="lg" className="shadow-sm border-bottom sticky-top">
+	<Container fluid className="px-3">
+		<Navbar.Brand as={Link}  to="/dashboard" className="fw-semibold">
+		Chat Haven
+		</Navbar.Brand>
 
-    <Nav className="ms-auto d-flex align-items-center gap-3">
-      <Navbar.Text> 👤 Logged in as: {user?.email} </Navbar.Text>
-      <Link to="/contacts" className="nav-link">Contact List</Link>
-      <Button variant="outline-danger" size="sm" onClick={handleLogout}>
-        Logout
-      </Button>
-    </Nav>
-  </Container>
+	<Navbar.Toggle aria-controls="navbar-content" />
+		<Navbar.Collapse id="navbar-content">
+		<Nav className="ms-auto d-flex align-items-center gap-3">
+			<Navbar.Text className="d-block d-lg-inline">
+			👤 Logged in as: {user?.email}
+			</Navbar.Text>
+			<Nav.Link as={Link} to="/contacts">
+			Contact List
+			</Nav.Link>
+			<Button
+			variant="outline-danger"
+			size="sm"
+			onClick={handleLogout}
+			>
+			Logout
+			</Button>
+		</Nav>
+		</Navbar.Collapse>
+	</Container>
 </Navbar>
   )
 }

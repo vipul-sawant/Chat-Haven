@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { format, isToday, isYesterday, differenceInCalendarDays } from "date-fns";
 
 import ChatHeader from "./ChatHeader.component";
@@ -37,9 +37,14 @@ const groupMessagesByDate = (messages) => {
 const ChatWindow = () => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth || {});
-  const selectedChatID = useSelector(state => state.chats.selectedChatID);
-  const chat = useSelector(state => selectedChatID ? chatSelectors.selectById(state, selectedChatID) : null);
-  const messages = useSelector(state => selectedChatID ? selectMessagesByChatId(state, selectedChatID) : []);
+  const { selectedChatID, chat, messages, isLoading } = useSelector(state => {
+    const selectedChatID = state.chats.selectedChatID;
+    const chat = selectedChatID ? chatSelectors.selectById(state, selectedChatID) : null;
+    const messages = selectedChatID ? selectMessagesByChatId(state, selectedChatID) : [];
+    const isLoading = state.messages.isLoading;  // Assuming you are using a loading state
+    return { selectedChatID, chat, messages, isLoading };
+  });
+
   const contacts = useSelector(contactSelectors.selectAll);
 
   const isContact = (userID) => contacts.find((c) => c.savedUser.userID === userID);
@@ -57,7 +62,7 @@ const ChatWindow = () => {
     if (chat?._id && chat?.lastMessage?._id && chat.lastMessage.recipientID === user._id) {
       markChatAsRead(chat._id);
     }
-  }, [chat?._id, chat?.lastMessage?._id, chat?.lastMessage?.status]);
+  }, [chat?._id, chat?.lastMessage?._id]);
 
   useEffect(() => {
     // Scroll to the bottom of the chat container when messages change
@@ -66,13 +71,18 @@ const ChatWindow = () => {
     }
   }, [messages]);
 
-  const groupedMessages = groupMessagesByDate(messages);
+  // Memoize grouped messages to avoid unnecessary recomputations
+  const groupedMessages = useMemo(() => groupMessagesByDate(messages), [messages]);
+
+  useEffect(() => {
+    // console.log("chat opened :", chat?.chatKey);
+  }, [chat]);
 
   return (
     <div className="chat-window d-flex flex-column h-100">
       {chat?._id ? (
         <>
-          <ChatHeader user={chat.participant} />
+          {chat?.participant && <ChatHeader user={chat.participant} />}
 
           <div ref={chatContainerRef} className="flex-grow-1 px-3 py-2 overflow-auto bg-light" style={{ height: "0px" }}>
             {messages.length > 0 ? (
@@ -88,15 +98,16 @@ const ChatWindow = () => {
               ))
             ) : (
               <div className="text-center text-muted mt-5">
-                No messages yet. Start chatting!
+                {isLoading ? "Loading messages..." : "No messages yet. Start chatting!"}
               </div>
             )}
           </div>
 
           <MessageForm
+            key={selectedChatID}
             fieldsArray={fields}
             data={{
-              ...(chat?._id && { chatID: chat._id }),
+              ...(chat?._id && { chatKey: chat.chatKey }),
               ...(isContact(chat.participant.userID) && {
                 contactID: isContact(chat.participant.userID)._id,
               }),

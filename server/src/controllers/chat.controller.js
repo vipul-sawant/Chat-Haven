@@ -29,109 +29,79 @@ const sendMessage = asyncHandler( async (req, res) => {
         const text = body.text;
 
         const authorID = checkID(user._id, "User ID");
-        const chatID = body.chatID?checkID(body.chatID, "chat ID"):null;
+        // const chatID = body.chatID?checkID(body.chatID, "chat ID"):null;
+        const chatKey = body.chatKey;
         const contactID = body.contactID?checkID(body.contactID, "contact ID"):null;
 
         let chat;
         let contact;
+        let recipientID;
+        // let newMessage;
 
-        if (chatID) {
-            chat = await Chat.findById(chatID);
+		console.log("body :", body);
+        if (chatKey) {
+            // chat = await Chat.findById(chatID);
+            chat = await Chat.findOne({chatKey});
+			// console.log("chat found :", chat);
+            
+            if (!chat) {
+				throw new ApiError(404, "Chat not found");
+            }
 
         } else if (contactID){
             contact = await Contact.isValidContact(contactID, authorID)
+			// console.log("contact found :", contact);
 
-        }
-
-        // const ;
-
-        // let chat;
-        let recipientID;
-
-        if (!contact && !chat) {
-
-          throw new ApiError(500, "You can only message your contacts first.");
-        }
-        if (contact) {
-        
+			if (!contact) {
+				throw new ApiError(400, "Invalid Contact");
+			}
+			
             recipientID = contact.savedUserID;
-            chat = await Chat.findOne({ 
-                participants: { $all: [authorID, recipientID] }, 
-                $expr: { $eq: [{ $size: "$participants" }, 2] } 
-            });
+			const participantsIDs = [authorID.toString(), recipientID.toString()].sort();
+			const chatKey = participantsIDs.join("_")
+			chat = await Chat.findOne({ chatKey });
+		
+			if (!chat) {
+				chat = await Chat.createNewChat(participantsIDs, chatKey);
+			}
+        }else {
+			throw new ApiError(400, "Provide either chatKey or contactID");
+		}
 
-            // if (chat) {
-                
-            //     chatID = chat._id;
-            // }
-        }
+		if (!chat) {
+			throw new ApiError(500, "Chat creation failed");
+		}
 
+		// Send the message
+		recipientID = recipientID || await chat.getOtherParticipantID(authorID);
+		const newMessage = await Message.createNewMessage(authorID, recipientID, text, chat._id);
+		
+		chat.messages.push(newMessage._id);
+		chat.lastMessage = newMessage._id;
 
-        // console.log(contact);
-        // console.log(chat);
-        // const chatID = chat._id;
-        // Step 2: Create a new message
-        // const newMessage = await Message.create({
-        //     authorID,
-        //     recipientID,
-        //     text,
-        //     chatID
-        // });
+		await chat.save({validateBeforeSave:false});
 
-        let newMessage;
-
-        // console.log('text :', text);
-
-        if (!chat) {
-            // Step 3: Create a new chat if it doesn’t exist
-            
-            // chat = await Chat.create({
-            //     participants: [authorID, recipientID],
-            //     messages: [newMessage._id],
-            //     lastMessage: newMessage._id
-            // });
-
-            recipientID = contact.savedUserID;
-            chat = await Chat.createNewChat(authorID, recipientID);
-            const chatID = chat._id;
-
-            newMessage = await Message.createNewMessage(authorID, recipientID, text, chatID);
-
-            chat.messages = [newMessage._id];
-            chat.lastMessage = newMessage._id;
-
-            await chat.save({validateBeforeSave:false});
-
-        } else {
-            // Step 4: Update existing chat
-
-            const chatID = chat._id;
-            recipientID = await chat.getOtherParticipantID(authorID);
-
-            newMessage = await Message.createNewMessage(authorID, recipientID, text, chatID);
-
-            chat.messages.push(newMessage._id);
-            chat.lastMessage = newMessage._id;
-            await chat.save({validateBeforeSave:false});
-        }
         const userSocketID = global.chatOnlineUsers.get(user._id.toString());
-        console.log("userSocketID :",userSocketID);
-        io.to(userSocketID).emit("single-message-sent", newMessage);
+		if (userSocketID) {
+			
+			console.log("userSocketID :",userSocketID);
+			io.to(userSocketID).emit("single-message-sent", newMessage);
+			console.log("single-message-sent");
+		}
         
-            // Notify recipient of new message
-            // Check if recipient is online
+		// Notify recipient of new message
+		// Check if recipient is online
         const recipientSocketID = global.chatOnlineUsers.get(recipientID.toString());
-        console.log(user._id);
-    if (recipientSocketID) {
-        console.log('singleMessageelivered from', user.email);
 
-        // Call the separate function to mark as delivered if recipient is online
-        await markMessageDelivered(io,recipientID, newMessage, []);
-        // io.to(recipientSocketID).emit("single-message-recieved", newMessage);
-    }
-        return res.status(200).json(
-            new ApiResponse(201, newMessage, `New message sent`)
-        );
+		if (recipientSocketID) {
+			console.log('single-message-will-be-delivered-from', user.fullName);
+
+			// Call the separate function to mark as delivered if recipient is online
+			await markMessageDelivered(io,recipientID, newMessage, []);
+		}
+			return res.status(200).json(
+				new ApiResponse(201, newMessage, `New message sent`)
+			);
 
     } catch (error) {
         
@@ -237,24 +207,25 @@ const markMessagesAsRead = async (io, chatID, readerID) => {
   }
 };
 
-
 const markMessageDelivered = async (io, recipientID, message, deliveredMessagesForBulk) => {
   // Example logic
-  console.log('deliveredMessagesForBulk :', deliveredMessagesForBulk);
-  if (deliveredMessagesForBulk && !deliveredMessagesForBulk.includes(message._id)) {
-      deliveredMessagesForBulk.push(message._id);
-     
-  }
-  const recipientSocketID = global.chatOnlineUsers.get(recipientID.toString());
-  console.log('recipentSocketID :', recipientSocketID);
-  console.log('OnlineUsers :', global.chatOnlineUsers);
-if (recipientSocketID) {
-    console.log('singleMessageelivered to', recipientID);
-    message.status = "delivered";
-    await message.save({validateBeforeSave:false});
-    io.to(recipientSocketID).emit("single-message-recieved", message);
-    io.to(recipientSocketID).emit("single-message-delivered", message);
-  }
+	console.log('deliveredMessagesForBulk :', deliveredMessagesForBulk);
+	if (deliveredMessagesForBulk && !deliveredMessagesForBulk.includes(message._id)) {
+		deliveredMessagesForBulk.push(message._id);
+		
+	}
+	const recipientSocketID = global.chatOnlineUsers.get(recipientID.toString());
+	console.log('OnlineUsers from markMessageDelivered function:', global.chatOnlineUsers);
+	if (recipientSocketID) {
+		console.log('recipentSocketID :', recipientSocketID);
+		console.log('singleMessageelivered to', recipientID);
+		message.status = "delivered";
+		await message.save({validateBeforeSave:false});
+
+		io.to(recipientSocketID).emit("single-message-recieved", message);
+		io.to(recipientSocketID).emit("single-message-delivered", message);
+	
+	}
 };
 
 
@@ -350,7 +321,12 @@ const fetchAllChats = asyncHandler(async (req, res) => {
                     }
                   }
                 },
-				lastMessage:1
+				lastMessage:1,
+				chatKey:1,
+				updatedAt:"$lastMessage.updatedAt",
+				// updatedAt:1,
+				// createdAt:"$lastMessage.createdAt"
+				createdAt:1
               }
             }
           ]);          

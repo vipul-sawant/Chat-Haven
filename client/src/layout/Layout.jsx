@@ -13,11 +13,11 @@ const Layout = () => {
   const { user, isLoggedIn, accessToken, loading } = useSelector((state) => state?.auth || {});
 
   useEffect(() => {
-    console.log("layout loaded");
+    // console.log("layout loaded");
     let cleanup;
 
     if (isLoggedIn && accessToken && user?._id && !loading) {
-      // console.log('User is logged in, initializing socket and navigating to dashboard...');
+      // // console.log('User is logged in, initializing socket and navigating to dashboard...');
 
       cleanup = connectSocket(accessToken, dispatch);
       socket.emit('joinChat', { userID: user._id });
@@ -26,7 +26,7 @@ const Layout = () => {
       // const userDashboard = `/users/${user.email}/dashboard`;
       const userDashboard = `/dashboard`;
       if (window.location.pathname !== userDashboard) {
-        // console.log(window.location.pathname);
+        // // console.log(window.location.pathname);
         navigate(userDashboard, { replace: true });
       }
 

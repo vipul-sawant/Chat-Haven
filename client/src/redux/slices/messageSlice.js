@@ -12,7 +12,7 @@ export const fetchAllMessages = createAsyncThunk("messages/fetchAllMessages", as
 
 export const sendMessage = createAsyncThunk("messages/sendMessage", async (chatDetails, { rejectWithValue }) => {
     try {
-      // console.log('chatetails :', chatDetails);
+      // // console.log('chatetails :', chatDetails);
         const { data } = await client.post(`/chats/send-message`, chatDetails);
         return data.data;
     } catch (err) {
@@ -40,7 +40,7 @@ const messagesSlice = createSlice({
     initialState,
     reducers: {
       addMessage: (state, action) => {
-        // console.log("addMessage in reducer");
+        // // console.log("addMessage in reducer");
         const message = action.payload;
         // const chatId = message.chatId;
         const chatId = message.chatID;
@@ -53,11 +53,11 @@ const messagesSlice = createSlice({
       },
   
       addMessagesBulk: (state, action) => {
-        // console.log("addMessagesBulk in reducer");
+        // // console.log("addMessagesBulk in reducer");
         const payload = action.payload;
   
         payload.forEach(chatGroup => {
-            // // console.log('chatGroup :', chatGroup);
+            // // // console.log('chatGroup :', chatGroup);
             const { chatID, messages } = chatGroup;
         
             if (!state.byChatId[chatID]) {
@@ -99,9 +99,9 @@ const messagesSlice = createSlice({
         .addCase(fetchAllMessages.fulfilled, (state, action) => {
             const payload = action.payload; // your array: [{ chatID, messages: [] }]
 
-            // console.log("fetchAllMessages :", payload);
+            // // console.log("fetchAllMessages :", payload);
             payload.forEach(chatGroup => {
-                // // console.log('chatGroup :', chatGroup);
+                // // // console.log('chatGroup :', chatGroup);
               const { chatID, messages } = chatGroup;
           
               state.byChatId[chatID] = messagesAdapter.setAll(
@@ -110,19 +110,19 @@ const messagesSlice = createSlice({
               );
             });
         })
-        .addCase(sendMessage.fulfilled, (state, action) => {
+        // .addCase(sendMessage.fulfilled, (state, action) => {
 
-          const message = action.payload;
-          // console.log("sendMessage payload :", message);
-          const chatId = message.chatID;
+        //   const message = action.payload;
+        //   // // console.log("sendMessage payload :", message);
+        //   const chatId = message.chatID;
   
-        if (!state.byChatId[chatId]) {
-          state.byChatId[chatId] = messagesAdapter.getInitialState();
-        }
+        // if (!state.byChatId[chatId]) {
+        //   state.byChatId[chatId] = messagesAdapter.getInitialState();
+        // }
   
-        messagesAdapter.upsertOne(state.byChatId[chatId], message);
+        // messagesAdapter.upsertOne(state.byChatId[chatId], message);
 
-        })
+        // })
 
         // ✅ Loading & Error Handling
         .addMatcher((action) => action.type.startsWith("messages/") &&  action.type.endsWith("/pending"), (state) => {
@@ -134,7 +134,7 @@ const messagesSlice = createSlice({
         })
         .addMatcher((action) => action.type.startsWith("messages/") && action.type.endsWith("/rejected"), (state, action) => {
             state.loading = false;
-            // // console.log(action.payload);
+            // // // console.log(action.payload);
             state.error = action.payload;
         });
 }
@@ -145,14 +145,14 @@ export const { addMessage, addMessagesBulk, markMessagesAsRead } = messagesSlice
 
 // 🧪 Optional helper: select messages by chatId
 export const selectMessagesByChatId = (state, chatId) => {
-   // console.log("chatId :", state.messages.byChatId[chatId]);
+   // // console.log("chatId :", state.messages.byChatId[chatId]);
     // Make sure state.messages is defined and check for the chat's messages.
     // If not present, default to the adapter's initial state.
     const chatMessages =
     (state.messages && state.messages.byChatId && state.messages.byChatId[chatId]) ||
     messagesAdapter.getInitialState();
 
-    // console.log("chatMessages :", chatMessages);
+    // // console.log("chatMessages :", chatMessages);
     // Create selectors for that specific chat's message adapter state.
     const selectors = messagesAdapter.getSelectors(() => chatMessages);
     return selectors.selectAll(chatMessages); // returns an array of messages

@@ -11,11 +11,11 @@ const AuthRedirect = () => {
     const { user, isLoggedIn, accessToken, loading } = useSelector((state) => state?.auth || {});
 
   useEffect(() => {
-    console.log("auth-redirect loaded");
+    // console.log("auth-redirect loaded");
     let cleanup;
 
     if (isLoggedIn && accessToken && user?._id && !loading) {
-      // console.log('User is logged in, initializing socket and navigating to dashboard...');
+      // // console.log('User is logged in, initializing socket and navigating to dashboard...');
 
       cleanup = connectSocket(accessToken, dispatch);
       socket.emit('joinChat', { userID: user._id });
@@ -23,7 +23,7 @@ const AuthRedirect = () => {
       // Navigate only if not already on the dashboard (optional enhancement)
       const userDashboard = `/users/${user.email}/dashboard`;
       if (window.location.pathname !== userDashboard) {
-        // console.log(window.location.pathname);
+        // // console.log(window.location.pathname);
         navigate(userDashboard, { replace: true });
       }
 

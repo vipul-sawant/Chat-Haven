@@ -9,6 +9,11 @@ const chatSchema = new Schema({
             required: true 
         }
     ],
+    chatKey: { // <- ✨ NEW field
+        type: String,
+        required: true,
+        unique: true
+      },
     messages:[
         {
             type:Types.ObjectId,
@@ -24,7 +29,7 @@ const chatSchema = new Schema({
 });
 
 // ✅ Unique Index to prevent duplicate chats between the same users
-chatSchema.index({ participants: 1 }, { unique: true });
+// chatSchema.index({ participants: 1 }, { unique: true });
 
 // Ensure exactly 2 participants before saving
 chatSchema.pre('validate', function (next) {
@@ -34,9 +39,11 @@ chatSchema.pre('validate', function (next) {
     next();
 });
 
-chatSchema.statics.createNewChat = async function(authorID, recipientID){
+chatSchema.statics.createNewChat = async function(participants, chatKey){
+    
     return await this.create({
-        participants:[authorID, recipientID]
+        participants,
+        chatKey
     });
 };
 

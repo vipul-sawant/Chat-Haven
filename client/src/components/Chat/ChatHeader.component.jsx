@@ -8,17 +8,20 @@ import { useEffect } from 'react';
 dayjs.extend(relativeTime);
 
 const ChatHeader = ({ user }) => {
+  // console.log("user :", user);
   const contacts = useSelector(contactSelectors.selectAll);
 
+  // console.log("contacts :", contacts);
+
   const getDisplayNameForUser = (userID, email) => {
-    const contact = contacts.find((c) => c.savedUserID === userID);
+    const contact = contacts.find((c) => c.savedUser.userID === userID);
     return contact ? contact.contactName : email;
   };
 
   const { online, lastSeen } = useUserStatus(user.userID);
 
   useEffect(() => {
-    // console.log("lastSeen :", lastSeen);
+    // // console.log("lastSeen :", lastSeen);
   }, [lastSeen, online]);
 
   return (

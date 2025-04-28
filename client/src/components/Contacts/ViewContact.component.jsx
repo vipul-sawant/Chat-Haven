@@ -9,12 +9,12 @@ const ViewContact = () => {
   const { id } = useParams();
   // const dispatch = useDispatch();
   const contact = useSelector((state) => id ? fetchContactById(state, id) : {});
-  console.log("contact :", contact);
+  // console.log("contact :", contact);
 
   useEffect(() => {
     // dispatch(fetchContactById(id));
-    // console.log("contact :", contact);
-    // console.log("id :", id);
+    // // console.log("contact :", contact);
+    // // console.log("id :", id);
   // }, [dispatch, id]);
   }, []);
 

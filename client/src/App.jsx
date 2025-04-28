@@ -12,7 +12,7 @@ const App = () => {
 
   useEffect(() => {
     // Step 1: Always try to initialize the user on app load
-	// console.log("app");
+	// // console.log("app");
     dispatch(initializeUser());
   }, [dispatch]);
 

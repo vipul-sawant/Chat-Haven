@@ -17,7 +17,7 @@ const ContactForm = ({ fieldsArray, operation, data = {}, page }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  console.log("data from contactFOrm :", data);
+  // console.log("data from contactFOrm :", data);
 
   const [formFields, setFormFields] = useState(fieldsArray);
   const schema = buildSchema(formFields, page);

@@ -11,10 +11,10 @@ import {
 
 const setupMessageListeners = (socket, dispatch) => {
   if (socket.hasListenersSet) return;
-  console.log(socket);
+  // console.log(socket);
   // 🔁 Single Message
   socket.on("single-message-recieved", (payload) => {
-    console.log("client single-message-recieved ", payload);
+    // console.log("client single-message-recieved ", payload);
     if (!payload || !payload.chatID || !payload.text) return;
   
     dispatch(addMessage(payload));
@@ -25,7 +25,7 @@ const setupMessageListeners = (socket, dispatch) => {
   socket.on('chat-marked-as-read', (payload) => {
 
     if (!payload || !payload.chatID || !payload.messages?.length) return;
-    console.log(payload);
+    // console.log(payload);
     dispatch(markMessagesAsRead(payload));
   });
 
@@ -36,8 +36,9 @@ const setupMessageListeners = (socket, dispatch) => {
   });
 
   socket.on('single-message-sent', (payload) => {
-    console.log("client single-message-delivered ", payload);
+    console.log("client single-message-sent ", payload);
     if (!payload || !payload.chatID || !payload.text) return;
+    dispatch(addMessage(payload));
     dispatch(updateLastMessage({ chatId: payload.chatID, message: payload }));
   });
 

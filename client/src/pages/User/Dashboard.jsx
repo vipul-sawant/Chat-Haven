@@ -1,5 +1,5 @@
 // src/pages/User/Dashboard.jsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
 
@@ -14,10 +14,12 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
-
+import Offcanvas from "react-bootstrap/Offcanvas";
 import "./Dashboard.css";
 
 const Dashboard = () => {
+  const [showContacts, setShowContacts] = useState(false);
+
   const dispatch = useDispatch();
   const { error: authError, isLoggedIn = false } = useSelector((state) => state.auth || {});
   // const { email = "unknown" } = useParams();
@@ -49,26 +51,45 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* 🔷 TOP BAR */}
-      {/* <div className="dashboard-topbar d-flex justify-content-between align-items-center p-2 px-3 border-bottom shadow-sm">
-        <span className="fw-semibold">👤 Logged in as: {email}</span>
-        <Link to={'/contacts'} style={{textDecoration:"none"}}> Contact List </Link>
-        <Button variant="outline-danger" size="sm" onClick={handleLogout}>
-          Logout
+      <Container fluid className="p-0 vh-100 d-flex flex-column">
+      {/* Mobile header */}
+      <div className="d-md-none p-2 bg-light border-bottom">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setShowContacts(true)}
+        >
+          ☰ Contacts
         </Button>
-      </div> */}
+      </div>
 
-      {/* 🔷 CHAT LAYOUT */}
-      <Container fluid>
-        <Row className="vh-100">
-          <Col xs={12} md={4} className="border-end p-0">
+      {/* Main layout */}
+      <Row className="flex-fill g-0">
+        {/* Offcanvas for mobile */}
+        <Offcanvas
+          show={showContacts}
+          onHide={() => setShowContacts(false)}
+          // responsive="md"
+        >
+          <Offcanvas.Header closeButton>
+            <Offcanvas.Title>Contacts</Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body className="p-0">
             <ChatList />
-          </Col>
-          <Col xs={12} md={8} className="p-0">
-            <ChatWindow />
-          </Col>
-        </Row>
-      </Container>
+          </Offcanvas.Body>
+        </Offcanvas>
+
+        {/* Sidebar on desktop */}
+        <Col md={4} className="d-none d-md-block border-end p-0">
+          <ChatList />
+        </Col>
+
+        {/* Chat area */}
+        <Col xs={12} md={8} className="p-0 d-flex flex-column">
+          <ChatWindow />
+        </Col>
+      </Row>
+    </Container>
     </>
   );
 };

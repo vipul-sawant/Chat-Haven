@@ -11,7 +11,7 @@ export const connectSocket = (accessToken, dispatch, options = {}) => {
 
     setupMessageListeners(socket, dispatch);
     const handleConnect = () => {
-        // console.log("✅ Socket connected");
+        // // console.log("✅ Socket connected");
     
     };
 
@@ -39,9 +39,9 @@ export const connectSocket = (accessToken, dispatch, options = {}) => {
     // ✅ Online status logic
     // const handleUserStatus = ({ userID, online, lastSeen }) => {
     //     if (online) {
-    //         // console.log(`🟢 User ${userID} is online`);
+    //         // // console.log(`🟢 User ${userID} is online`);
     //     } else {
-    //         // console.log(`🔴 User ${userID} is offline. Last seen at: ${lastSeen}`);
+    //         // // console.log(`🔴 User ${userID} is offline. Last seen at: ${lastSeen}`);
     //     }
     //     // You can call a callback or dispatch state update here
     // };

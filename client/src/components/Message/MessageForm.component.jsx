@@ -19,6 +19,7 @@ import Button from "react-bootstrap/Button";
 
 const MessageForm = ({ fieldsArray, data={}, page="message" }) => {
 
+	console.log("MessageForm data :", data);
 	const [ formfields, setFormFields ] = useState(fieldsArray);
     const schema = buildSchema(formfields, page);const setDefaultValues = (fields, data) => {
 
@@ -48,7 +49,7 @@ const MessageForm = ({ fieldsArray, data={}, page="message" }) => {
 
 	const formSubmit = async (formData) => {
 		try {
-		  // console.log("🚀 Submitted form data:", formData); // 👈 Add this
+		  // // console.log("🚀 Submitted form data:", formData); // 👈 Add this
 	  
 		  const messageAction = await dispatch(sendMessage(formData));
 		  if (messageAction?.error) {

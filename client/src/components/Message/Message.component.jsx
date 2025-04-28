@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { parseISO, format } from "date-fns";
+import { parseISO, format, isToday } from "date-fns";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
 import { selectChat } from "../../redux/slices/chatSlice";
 
@@ -8,7 +8,8 @@ const Message = ({ msg, viewType }) => {
   const unreadCount = useSelector(state => selectChat(state, msg.chatID)?.unreadCount ?? 0);
 
   const isMine = msg.authorID === user?._id;
-  const time = format(parseISO(msg.updatedAt), "p"); // Format to local time (AM/PM)
+  // const time = format(parseISO(msg.updatedAt), "p"); // Format to local time (AM/PM)
+  const time = format(parseISO(msg.createdAt), "p"); // Format to local time (AM/PM)
 
   const tickProps = {
     sent: { Icon: BsCheck, color: "gray" },
@@ -41,7 +42,7 @@ const Message = ({ msg, viewType }) => {
 			<div className="p-2 rounded position-relative" style={messageStyles}>
 				<div>{msg.text}</div>
 				<div className="d-flex align-items-center justify-content-end mt-1" style={{ fontSize: "0.75rem", color: "#ccc" }}>
-					<span className="me-1">{time}</span>
+					<span className="me-1">{isToday(msg.updatedAt) ? time : format(msg.updatedAt, "MMM d, yyyy")}</span>
 					{isMine && tickProps.Icon && <tickProps.Icon size={14} color={tickProps.color} />}
 				</div>
 			</div>

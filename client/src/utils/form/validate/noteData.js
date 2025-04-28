@@ -7,7 +7,7 @@ const validateNote = (data, note) => {
         }
     }
 
-    // console.log("Updated fields:", newObj);
+    // // console.log("Updated fields:", newObj);
     return newObj;
 };
 

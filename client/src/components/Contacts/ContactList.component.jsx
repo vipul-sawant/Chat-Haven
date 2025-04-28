@@ -15,7 +15,7 @@ const ContactList = () => {
 //   }, [dispatch]);
 
   const contacts = useSelector(contactSelectors.selectAll);
-  console.log('contacts :', contacts);
+  // console.log('contacts :', contacts);
 
   const deleteContact = async (id) => {
 
@@ -53,7 +53,7 @@ const ContactList = () => {
                     <Link to={`/contacts/view/${contact._id}`} className="btn btn-info btn-sm me-2">View</Link>
                     <Link to={`/contacts/edit/${contact._id}`} className="btn btn-warning btn-sm">Edit</Link>
                     {/* <Link to={`/contacts/delete/${contact._id}`} className="btn btn-warning btn-sm">Delete</Link> */}
-                    <Button className="btn-danger" onClick={()=>{deleteContact(contact._id)}}> Delete </Button>
+                    <Button className="btn-danger my-1" onClick={()=>{deleteContact(contact._id)}}> Delete </Button>
                   </div>
                 </ListGroup.Item>
             </ListGroup>

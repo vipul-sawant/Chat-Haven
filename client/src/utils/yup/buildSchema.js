@@ -2,7 +2,7 @@ import * as Yup from 'yup';
 
 const buildSchema = (fieldsArray, page) => {
 
-    // console.log('page :', page);
+    // // console.log('page :', page);
     
     const shapeSchema = fieldsArray.reduce((shape, field)=>{
         
